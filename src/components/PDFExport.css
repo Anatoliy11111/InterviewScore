@@ -1,0 +1,5 @@
+@media print {
+    .category-card {
+        page-break-after: always;
+    }
+}
