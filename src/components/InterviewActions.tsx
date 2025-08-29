@@ -33,7 +33,7 @@ export const InterviewActions = ({
 
             <Button
                 type="default"
-                onClick={() => exportToPDF(candidateName)}
+                onClick={() => exportToPDF({candidateName})}
                 style={{marginRight: 8}}
             >
                 Сформировать PDF (A4)
