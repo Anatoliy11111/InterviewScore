@@ -2,7 +2,7 @@ import {create} from 'zustand';
 import {persist} from 'zustand/middleware';
 
 // Типы
-type Ratings = {
+export type Ratings = {
     [category: string]: {
         [questionIndex: number]: number;
     };
