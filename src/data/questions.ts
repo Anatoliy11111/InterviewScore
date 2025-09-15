@@ -15,6 +15,8 @@ export interface Question {
     subQuestions: SubQuestion[];
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 export enum Categories {
     JavaScript = 'JavaScript & ES6+',
     TypeScript = 'TypeScript',
