@@ -11,8 +11,6 @@ interface Props {
 
 export const InterviewActions = ({
                                      totalScore,
-                                     // onGenerateReport,
-                                     // loading,
                                  }: Props) => {
     const {candidateName, reset} = useInterviewStore();
 
@@ -21,15 +19,6 @@ export const InterviewActions = ({
             <Divider/>
 
             <Summary totalScore={totalScore}/>
-
-            {/*<Button*/}
-            {/*    type="primary"*/}
-            {/*    onClick={onGenerateReport}*/}
-            {/*    loading={loading}*/}
-            {/*    style={{marginRight: 8}}*/}
-            {/*>*/}
-            {/*    Сгенерировать заключение*/}
-            {/*</Button>*/}
 
             <Button
                 type="default"

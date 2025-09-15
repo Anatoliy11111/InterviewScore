@@ -15,76 +15,236 @@ export interface Question {
     subQuestions: SubQuestion[];
 }
 
+export enum Categories {
+    JavaScript = 'JavaScript & ES6+',
+    TypeScript = 'TypeScript',
+    React = 'React & State Management',
+    CSS = 'Верстка & CSS',
+    HTTP = 'HTTP & HTTPS',
+    Storage = 'Браузерные хранилища',
+    Build = 'Сборка, CI/CD',
+    Tests = 'Тестирование',
+    Api = 'Работа с API'
+}
+
 export interface QuestionCategory {
-    category: string;
+    category: Categories;
     weight: number;
     questions: Question[];
 }
 
-// Данные
+export const MINI_TASKS = {
+    [Categories.JavaScript]: [
+        {
+            title: 'Порядок вывода?',
+            code: `console.log('start');
+
+        setTimeout(() => {
+          console.log('timeout');
+        }, 0);
+
+        queueMicrotask(() => {
+          console.log('microtask');
+        });
+
+        Promise.resolve().then(() => {
+          console.log('promise');
+        });
+
+        console.log('end');`,
+            expected: 'start, end, microtask, promise, timeout',
+            explanation: '`queueMicrotask` и `Promise.then()` — микрозадачи, выполняются после текущего стека, но до `setTimeout`.',
+        },
+        {
+            title: 'Что вернёт последний вызов? Как это работает?',
+            code: `const module = (function() {
+  let privateValue = 0;
+
+  const currentValue = () => privateValue;
+
+  return {
+    increment: () => ++privateValue,
+    logger: {
+      log: (function() {
+        const snapshot = privateValue;
+        return () => console.log(snapshot);
+      })(),
+      getValue: () => privateValue
+    }
+  };
+})();
+
+module.increment();
+module.logger.log(); // ?
+module.increment();
+console.log(module.logger.getValue()); // ?`,
+            expected: '0\n2',
+            explanation: '`logger.log` — это замыкание на момент создания модуля: оно захватило `privateValue = 0`. Даже после инкрементов, `log` продолжает ссылаться на старое окружение. `getValue` читает актуальное значение.',
+            hint: 'Помните: замыкание фиксирует переменную, но не её значение.',
+        }
+    ],
+    [Categories.TypeScript]: [
+        {
+            title: 'Почему ошибка?',
+            code: `interface User {
+  name: string;
+}
+const user = {} as User;
+console.log(user.name);`,
+            expected: 'Объект пустой. Утверждение типа не гарантирует наличие данных.',
+        },
+    ],
+    [Categories.React]: [
+        {
+            title: 'Почему компонент не перерисовывается?',
+            code: `function Counter() {
+  const [count, setCount] = useState(0);
+  const increment = () => {
+    count++; // ❌
+  };
+  return <button onClick={increment}>{count}</button>;
+}`,
+            expected: 'Нужно использовать setCount(count + 1). Прямое изменение state не работает.',
+        },
+        {
+            title: 'Где утечка памяти?',
+            code: `useEffect(() => {
+  const interval = setInterval(() => {
+    console.log('tick');
+  }, 1000);
+}, []);`,
+            expected: 'Нет cleanup. Нужно: return () => clearInterval(interval);',
+        },
+    ],
+    [Categories.CSS]: [
+        {
+            title: 'Как центрировать элемент?',
+            code: `.center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* Что дальше? */
+}`,
+            expected: 'transform: translate(-50%, -50%);',
+        },
+        {
+            title: 'Почему текст "прыгает" при анимации?',
+            code: `.animate:hover {
+  opacity: 0.8;
+  transform: scale(1.02);
+}`,
+            expected: 'Анимация вызывает repaint. Лучше: только transform и opacity.',
+        },
+    ],
+    [Categories.HTTP]: [
+        {
+            title: 'Почему CORS блокирует запрос?',
+            code: `fetch('https://api.external.com/data')
+  .then(r => r.json())
+  .then(console.log);`,
+            expected: 'CORS. Нужен backend-прокси или сервер должен отправлять Access-Control-Allow-Origin.',
+        },
+    ],
+    [Categories.Storage]: [
+        {
+            title: 'Почему данные не сохраняются?',
+            code: `localStorage.user = { name: 'John' };
+console.log(localStorage.user);`,
+            expected: 'Нужно: JSON.stringify / JSON.parse. Объект превращается в "[object Object]".',
+        },
+    ],
+    [Categories.Build]: [
+        {
+            title: 'Как уменьшить размер бандла?',
+            code: `import _ from 'lodash'; // весь lodash`,
+            expected: 'Импортируйте отдельные функции: import debounce from "lodash/debounce";',
+        },
+    ],
+    [Categories.Tests]: [
+        {
+            title: 'Как дождаться асинхронного рендера?',
+            code: `render(<AsyncComponent />);
+expect(screen.getByText('Loaded')).toBeInTheDocument();`,
+            expected: 'Используйте waitFor или findByText — getByText не ждёт.',
+        },
+    ],
+    [Categories.Api]: [
+        {
+            title: 'Как избежать дублирующих запросов?',
+            code: `useEffect(() => {
+  fetch('/api/user');
+}, [userId]);`,
+            expected: 'Используйте debounce, abortController или memoization.',
+        },
+    ],
+};
+
 export const questions: QuestionCategory[] = [
     {
-        category: "JavaScript & ES6+",
+        category: Categories.JavaScript,
         weight: 20,
         questions: [
+            // === Существующий вопрос о замыканиях (можно оставить или чуть улучшить) ===
             {
                 text: "Объясните, как работает замыкание. Приведите пример, где оно используется в реальной практике.",
                 maxScore: 5,
                 level: 'middle',
-                sampleAnswer: "Замыкание — функция, сохраняющая доступ к переменным из внешней области видимости. Используется в каррировании, кешировании, модулях.",
+                sampleAnswer: "Замыкание — функция, сохраняющая доступ к переменным из внешней области видимости. Используется в каррировании, кешировании, модулях, `debounce/throttle`.",
                 subQuestions: [
                     {
                         text: "Что такое лексическое окружение?",
-                        sampleAnswer: "Область, в которой была объявлена функция, и доступные в ней переменные.",
+                        sampleAnswer: "Контекст, в котором была объявлена функция, и доступ к переменным в этой области.",
                         level: 'junior'
                     },
                     {
                         text: "Может ли внутренняя функция изменять переменные внешней?",
-                        sampleAnswer: "Да, замыкание предоставляет доступ на чтение и запись.",
+                        sampleAnswer: "Да, замыкание предоставляет полный доступ на чтение и запись.",
                         level: 'junior'
                     },
                     {
                         text: "Приведите простой пример замыкания с подсчётом вызовов.",
-                        sampleAnswer: "function counter() { let count = 0; return () => ++count; }",
+                        sampleAnswer: "function createCounter() { let count = 0; return () => ++count; }",
                         level: 'junior'
                     },
                     {
                         text: "Может ли замыкание привести к утечкам памяти? Как избежать?",
-                        sampleAnswer: "Да, если удерживает большие объекты. Очищайте ссылки, когда они больше не нужны.",
+                        sampleAnswer: "Да, если удерживает большие объекты или DOM-узлы. Очищайте ссылки при необходимости.",
                         level: 'middle'
                     },
                     {
-                        text: "Как замыкания используются в реализации `debounce` или `throttle`?",
-                        sampleAnswer: "`debounce` хранит `timeoutId` в замыкании, чтобы отменить предыдущий таймер.",
+                        text: "Как замыкания используются в реализации `debounce`?",
+                        sampleAnswer: "`debounce` хранит `timeoutId` в замыкании, чтобы отменить предыдущий таймер при новом вызове.",
                         level: 'middle'
                     },
                     {
                         text: "Что будет выведено: `for (var i = 0; i < 3; i++) setTimeout(() => console.log(i), 100)`?",
-                        sampleAnswer: "Три раза 3. `var` одна на всё замыкание, `i` — одна переменная.",
+                        sampleAnswer: "Три раза `3`. Переменная `i` одна на всё замыкание из-за `var`.",
                         level: 'middle'
                     },
                     {
-                        text: "Как использовать замыкания для создания приватных полей в классах до появления `#`?",
-                        sampleAnswer: "Объявите переменную в конструкторе — она будет доступна только через замыкание.",
+                        text: "Как использовать замыкания для создания приватных полей до `#private`?",
+                        sampleAnswer: "Объявите переменную в конструкторе или фабричной функции — она будет доступна только через замыкание.",
                         level: 'senior'
                     },
                     {
                         text: "Как замыкания влияют на производительность при создании большого количества функций?",
-                        sampleAnswer: "Каждое замыкание хранит ссылку на окружение — может увеличить потребление памяти.",
+                        sampleAnswer: "Каждое замыкание хранит ссылку на внешнее окружение — может увеличить потребление памяти.",
                         level: 'senior'
                     },
                     {
                         text: "Как отследить утечку памяти через замыкания в Chrome DevTools?",
-                        sampleAnswer: "С помощью Heap Snapshot — ищите объекты с долгоживущими closure-переменными.",
+                        sampleAnswer: "Heap Snapshot → ищите closure-переменные с долгоживущими ссылками на большие объекты.",
                         level: 'senior'
                     }
                 ]
             },
+
+            // === Существующий вопрос о Event Loop ===
             {
                 text: "Как работает Event Loop? Приведите пример, где `Promise` выполняется раньше, чем `setTimeout(0)`.",
                 maxScore: 5,
                 level: 'middle',
-                sampleAnswer: "Event Loop обрабатывает микрозадачи (Promise) до макрозадач (setTimeout). Поэтому `Promise.then()` выполнится перед `setTimeout(0)`.",
+                sampleAnswer: "Event Loop обрабатывает микрозадачи (`Promise`) до макрозадач (`setTimeout`). Поэтому `Promise.then()` выполнится перед `setTimeout(0)`.",
                 subQuestions: [
                     {
                         text: "Что такое асинхронность в JavaScript?",
@@ -132,11 +292,176 @@ export const questions: QuestionCategory[] = [
                         level: 'senior'
                     }
                 ]
+            },
+
+            // === НОВЫЙ: Работа с объектами и иммутабельность ===
+            {
+                text: "Как правильно клонировать объект в JavaScript? Сравните поверхностное и глубокое копирование.",
+                maxScore: 5,
+                level: 'middle',
+                sampleAnswer: "Поверхностно: `{...obj}`, `Object.assign`. Глубоко: `JSON.parse(JSON.stringify())` (ограничения!) или рекурсия. Для сложных случаев — библиотеки или `structuredClone()`.",
+                subQuestions: [
+                    {
+                        text: "Что такое `spread`-оператор (`...`) и как он работает с объектами?",
+                        sampleAnswer: "Копирует свойства одного объекта в другой. Поверхностная копия.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Что выведет `const a = { x: 1 }; const b = { ...a }; b.x = 2; console.log(a.x)`?",
+                        sampleAnswer: "1. `b` — новый объект, изменения не влияют на `a`.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Почему `JSON.parse(JSON.stringify(obj))` не всегда безопасен?",
+                        sampleAnswer: "Теряет `undefined`, `Symbol`, `Function`, циклические ссылки, `Date` становится строкой.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как работает `structuredClone()` и чем он лучше `JSON`-хака?",
+                        sampleAnswer: "Поддерживает `Date`, `RegExp`, циклы, `ArrayBuffer`. Но не поддерживает `Function`.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как проверить, что два объекта одинаковы по содержимому?",
+                        sampleAnswer: "Используйте `isEqual` из Lodash или напишите рекурсивную функцию с `Object.keys`.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как создать неизменяемый объект?",
+                        sampleAnswer: "Используйте `Object.freeze(obj)`. Не глубокое, но базовая защита.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как реализовать глубокое замораживание объекта?",
+                        sampleAnswer: "Рекурсивно проходите по всем полям и вызывайте `Object.freeze`.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Какие проблемы у `==` и когда использовать `===`?",
+                        sampleAnswer: "`==` приводит типы. `===` — строгое сравнение. Всегда используйте `===`.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Как безопасно проверить, содержит ли объект ключ?",
+                        sampleAnswer: "Используйте `Object.hasOwn(obj, 'key')` вместо `obj.hasOwnProperty`.",
+                        level: 'senior'
+                    }
+                ]
+            },
+
+            // === НОВЫЙ: Классы, прототипы, private поля ===
+            {
+                text: "Чем классы в JavaScript отличаются от классов в других языках? Как работает прототипное наследование?",
+                maxScore: 5,
+                level: 'middle',
+                sampleAnswer: "JS использует прототипное наследование. Классы — синтаксический сахар над функциями-конструкторами. `this` и `super` работают через цепочку прототипов.",
+                subQuestions: [
+                    {
+                        text: "Что такое прототип в JavaScript?",
+                        sampleAnswer: "Свойство `prototype` функции, которое становится `__proto__` у экземпляра.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Как создать объект с определённым прототипом?",
+                        sampleAnswer: "Через `Object.create(proto)`.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Что такое `new` и что он делает?",
+                        sampleAnswer: "Создаёт объект, связывает с прототипом, вызывает конструктор с `this`.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Чем `class` отличается от функции-конструктора?",
+                        sampleAnswer: "Синтаксис, поведение `super`, `static`, `extends`. Но под капотом — то же самое.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как работает `super` в методах и конструкторе?",
+                        sampleAnswer: "Вызывает родительский метод. В конструкторе — только после `this`.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Что такое `#private` поля и как они работают?",
+                        sampleAnswer: "Приватные поля, доступны только внутри класса. Не наследуются, не видны снаружи.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Можно ли получить доступ к `#private` полю извне?",
+                        sampleAnswer: "Только через замыкания или геттеры. Напрямую — нет.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Как реализовать статическую фабрику в классе?",
+                        sampleAnswer: "Статический метод, возвращающий экземпляр: `User.fromData(data)`.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Какие подводные камни у `this` в колбэках?",
+                        sampleAnswer: "`this` теряется. Решение: стрелочные функции, `.bind(this)` или классовые поля.",
+                        level: 'senior'
+                    }
+                ]
+            },
+
+            // === НОВЫЙ: Современные возможности JS (ESNext) ===
+            {
+                text: "Какие современные возможности JavaScript вы используете регулярно? Объясните, зачем нужны `?.`, `??`, `at()`, `AbortController`.",
+                maxScore: 5,
+                level: 'middle',
+                sampleAnswer: "`?.` — безопасный доступ. `??` — нулевое слияние. `at()` — индекс с конца. `AbortController` — отмена асинхронных операций.",
+                subQuestions: [
+                    {
+                        text: "Что делает `obj?.prop`?",
+                        sampleAnswer: "Проверяет, существует ли `obj`, и только тогда читает `prop`. Избегает ошибки.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Чем `??` отличается от `||`?",
+                        sampleAnswer: "`||` проверяет falsy значения. `??` — только `null/undefined`.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Как получить последний элемент массива с помощью `at()`?",
+                        sampleAnswer: "`arr.at(-1)` — последний, `arr.at(-2)` — предпоследний.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Зачем нужен `AbortController`?",
+                        sampleAnswer: "Для отмены `fetch`, `setTimeout`, `EventTarget`. Удобно при выходе из компонента.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как использовать `AbortController` с `fetch`?",
+                        sampleAnswer: "Передайте `signal` в опции: `fetch(url, { signal })`, затем `controller.abort()`.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Что такое `Object.hasOwn(obj, key)` и чем он лучше `obj.hasOwnProperty`?",
+                        sampleAnswer: "`hasOwn` — безопаснее, не ломается, если `hasOwnProperty` перезаписан.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как работает `Intl` API? Приведите пример форматирования даты.",
+                        sampleAnswer: "`new Intl.DateTimeFormat('ru-RU').format(date)` — локализованная дата.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Как сериализовать объект с циклическими ссылками?",
+                        sampleAnswer: "Используйте `structuredClone()` или кастомный `replacer` в `JSON.stringify`.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Какие новые методы массивов появились недавно? (`findLast`, `toReversed` и др.)",
+                        sampleAnswer: "`toSorted`, `toReversed`, `toSpliced`, `with` — не мутируют оригинал. Полезны в React.",
+                        level: 'senior'
+                    }
+                ]
             }
         ]
     },
     {
-        category: "TypeScript",
+        category: Categories.TypeScript,
         weight: 15,
         questions: [
             {
@@ -248,7 +573,7 @@ export const questions: QuestionCategory[] = [
         ]
     },
     {
-        category: "React & State Management",
+        category: Categories.React,
         weight: 20,
         questions: [
             {
@@ -413,58 +738,59 @@ export const questions: QuestionCategory[] = [
         ]
     },
     {
-        category: "Верстка & CSS",
+        category: Categories.CSS,
         weight: 15,
         questions: [
             {
-                text: "Какие CSS-свойства вызывают repaint, reflow и compositing? Приведите примеры и способы оптимизации.",
+                text: "Как вы оцениваете и оптимизируете производительность CSS в крупном приложении? Приведите примеры, где стили могут замедлять рендеринг.",
                 maxScore: 5,
                 level: 'middle',
-                sampleAnswer: "`reflow`: `width`, `height`, `margin`. `repaint`: `color`, `background`. `compositing`: `transform`, `opacity`. Оптимизация: анимируйте `transform` и `opacity`.",
+                sampleAnswer: "Анализирую через DevTools: Performance, Coverage, Rendering. Избегаю тяжёлых селекторов, глубокой вложенности, частых layout/paint. Использую `will-change`, `contain`, оптимизирую анимации через `transform`/`opacity`. Следлю за количеством repaint'ов и композитными слоями.",
                 subQuestions: [
                     {
-                        text: "Что такое `reflow`?",
-                        sampleAnswer: "Пересчёт позиций и размеров элементов.",
+                        text: "Какие инструменты в браузере помогают найти медленные стили?",
+                        sampleAnswer: "Performance tab (Layout, Paint), Rendering panel (Paint flashing, Layer borders), Coverage (неиспользуемый CSS).",
                         level: 'junior'
                     },
                     {
-                        text: "Что такое `repaint`?",
-                        sampleAnswer: "Перерисовка элемента без изменения макета.",
+                        text: "Почему глубокая вложенность селекторов (`nav ul li a`) — плохая практика?",
+                        sampleAnswer: "Замедляет матчинг CSS-правил. Браузер читает справа налево — каждый элемент проверяется глубоко.",
                         level: 'junior'
                     },
                     {
-                        text: "Какие свойства не вызывают `reflow`?",
-                        sampleAnswer: "`transform`, `opacity`, `will-change` — работают на GPU.",
-                        level: 'junior'
-                    },
-                    {
-                        text: "Как работает `contain: layout` и зачем он?",
-                        sampleAnswer: "Ограничивает влияние элемента на макет. Ускоряет рендеринг.",
+                        text: "Что такое специфичность и как она влияет на производительность?",
+                        sampleAnswer: "Не напрямую, но высокая специфичность часто означает сложные селекторы, которые труднее обрабатывать.",
                         level: 'middle'
                     },
                     {
-                        text: "Что такое BFC и когда он создаётся?",
-                        sampleAnswer: "Block Formatting Context — изолирует макет. Создаётся при `overflow: hidden`, `display: flex`.",
+                        text: "Как использовать `content-visibility` для оптимизации длинных страниц?",
+                        sampleAnswer: "`content-visibility: auto` откладывает рендеринг внеэкранного контента. Ускоряет первоначальную отрисовку.",
                         level: 'middle'
                     },
                     {
-                        text: "Как ускорить анимацию без `reflow`?",
-                        sampleAnswer: "Используйте `transform` и `opacity`, добавьте `will-change: transform`.",
+                        text: "Когда стоит использовать `@supports` и `@media (prefers-reduced-motion)`?",
+                        sampleAnswer: "`@supports` — для безопасного использования новых свойств. `prefers-reduced-motion` — ради доступности, чтобы не раздражать пользователей.",
                         level: 'middle'
                     },
                     {
-                        text: "Как отследить `reflow` и `repaint` в DevTools?",
-                        sampleAnswer: "В Performance tab — ищите события Layout и Paint.",
+                        text: "Как избежать «дрожания» текста при анимации?",
+                        sampleAnswer: "Использовать `transform` вместо `top/left`, избегать субпиксельных сдвигов, применять `will-change` умеренно.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как работает `contain: strict` и где это полезно?",
+                        sampleAnswer: "Изолирует layout, style, paint. Полезно для карточек, виджетов — предотвращает влияние на весь документ.",
                         level: 'senior'
                     },
                     {
-                        text: "Как использовать `transform` для анимации без дрожжания?",
-                        sampleAnswer: "Добавьте `transform: translateZ(0)` или `will-change: transform`.",
+                        text: "Какие подводные камни у создания множества композитных слоёв (`compositing layers`)?",
+                        sampleAnswer: "Расход памяти GPU, особенно на мобильных. Может привести к лагам. Используйте `will-change` осознанно.",
                         level: 'senior'
                     },
                     {
-                        text: "Как избежать layout thrashing?",
-                        sampleAnswer: "Не чередуйте чтение и запись в DOM. Группируйте операции."
+                        text: "Как протестировать производительность CSS на слабых устройствах?",
+                        sampleAnswer: "Throttling CPU в DevTools, реальные устройства, Lighthouse, Emulation Mode. Смотрю на FPS во время скролла и анимаций.",
+                        level: 'senior'
                     }
                 ]
             },
@@ -481,22 +807,22 @@ export const questions: QuestionCategory[] = [
                     },
                     {
                         text: "Что делает `text-align: center`?",
-                        sampleAnswer: "Выравнивает инлайновые элементы по центру родителя.",
+                        sampleAnswer: "Выравнивает инлайновые и inline-block элементы по центру родителя.",
                         level: 'junior'
                     },
                     {
                         text: "Что такое `position: absolute`?",
-                        sampleAnswer: "Позиционирует элемент относительно ближайшего позиционированного предка.",
+                        sampleAnswer: "Позиционирует элемент относительно ближайшего позиционированного предка (не static).",
                         level: 'junior'
                     },
                     {
                         text: "Чем `flex-shrink: 0` отличается от `min-width: 0`?",
-                        sampleAnswer: "`flex-shrink: 0` — не сжимается. `min-width: 0` — позволяет сжиматься.",
+                        sampleAnswer: "`flex-shrink: 0` — не сжимается. `min-width: 0` — позволяет сжиматься, даже если контент широкий.",
                         level: 'middle'
                     },
                     {
                         text: "Как работает `gap` в `flex` и `grid`?",
-                        sampleAnswer: "Добавляет отступ между элементами. В `flex` — только по направлению.",
+                        sampleAnswer: "Добавляет отступ между элементами. В `flex` — только по направлению потока, в `grid` — по двум осям.",
                         level: 'middle'
                     },
                     {
@@ -506,24 +832,130 @@ export const questions: QuestionCategory[] = [
                     },
                     {
                         text: "Как центрировать элемент с неизвестной высотой без `transform`?",
-                        sampleAnswer: "Используйте `flexbox` или `grid` — они не зависят от размеров.",
+                        sampleAnswer: "Используйте `flexbox` или `grid` — они не зависят от размеров дочерних элементов.",
                         level: 'senior'
                     },
                     {
                         text: "Как центрировать текст по вертикали в `div` без `flex`?",
-                        sampleAnswer: "Установите `line-height` равный высоте `div` (для одной строки).",
+                        sampleAnswer: "Установите `line-height` равный высоте `div` (для одной строки). Для нескольких — `display: table-cell; vertical-align: middle`.",
                         level: 'senior'
                     },
                     {
                         text: "Какие подводные камни у `position: absolute + transform`?",
-                        sampleAnswer: "Зависит от размеров родителя, может выходить за пределы при `overflow`."
+                        sampleAnswer: "Зависит от размеров родителя, может выходить за пределы при `overflow: hidden`. Не резиновый."
+                    }
+                ]
+            },
+            // ✅ НОВЫЙ: Адаптивная вёрстка
+            {
+                text: "Как реализовать адаптивную вёрстку для мобильных, планшетов и десктопов? Какие техники используете?",
+                maxScore: 5,
+                level: 'middle',
+                sampleAnswer: "Mobile-first, `@media (min-width)`, `rem/em`, `clamp()`, `container queries`. Использую `grid` и `flex` с `gap`.",
+                subQuestions: [
+                    {
+                        text: "Что такое mobile-first и desktop-first?",
+                        sampleAnswer: "Mobile-first — базовые стили для мобильных, улучшения через `min-width`. Desktop-first — наоборот.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Что делает `viewport` meta?",
+                        sampleAnswer: "<meta name='viewport' content='width=device-width, initial-scale=1'> — корректно масштабирует страницу.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Что такое `rem` и `em`?",
+                        sampleAnswer: "`rem` — относительно корня (`html`). `em` — относительно родителя.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Как использовать `clamp()` для резинового шрифта?",
+                        sampleAnswer: "font-size: clamp(1rem, 2.5vw, 2rem); — от min до max с зависимостью от ширины.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Что такое container queries и чем они лучше media queries?",
+                        sampleAnswer: "Реагируют на размер контейнера, а не экрана. Позволяют создавать независимые компоненты.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как тестировать адаптивность?",
+                        sampleAnswer: "Chrome DevTools, реальные устройства, storybook, Percy (визуальное тестирование).",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как сделать сетку, которая меняется с 1 колонки на 3 при увеличении экрана?",
+                        sampleAnswer: "grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Как избежать «прыгания» интерфейса при загрузке?",
+                        sampleAnswer: "Резервируйте место под изображения (`aspect-ratio`), используйте skeleton-загрузку.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Как оптимизировать производительность адаптивных медиазапросов?",
+                        sampleAnswer: "Группируйте правила, минимизируйте количество точек, используйте `prefers-reduced-data`."
+                    }
+                ]
+            },
+            // ✅ НОВЫЙ: Доступность (a11y)
+            {
+                text: "Как обеспечить доступность вёрстки для пользователей с ограниченными возможностями?",
+                maxScore: 5,
+                level: 'middle',
+                sampleAnswer: "Семантические теги, `aria-*`, `role`, клавиатурная навигация, контраст, `lang`, `alt`, `focus-visible`.",
+                subQuestions: [
+                    {
+                        text: "Зачем нужен `alt` у изображения?",
+                        sampleAnswer: "Для скринридеров и случаев, когда изображение не загружено.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Что такое семантическая вёрстка?",
+                        sampleAnswer: "Использование правильных тегов: `<nav>`, `<main>`, `<article>` — для понимания структуры.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Как проверить контраст текста?",
+                        sampleAnswer: "Chrome DevTools → Color Picker → AA/AAA рейтинг.",
+                        level: 'junior'
+                    },
+                    {
+                        text: "Что такое `aria-label` и когда его использовать?",
+                        sampleAnswer: "Текстовое описание для скринридера. Когда текст на кнопке — иконка.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Что делает `role=\"button\"`?",
+                        sampleAnswer: "Сообщает скринридеру, что элемент ведёт себя как кнопка (если это div/span).",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Как сделать модальное окно доступным?",
+                        sampleAnswer: "Фокусировка на модале, `aria-modal=\"true\"`, закрытие по Esc, ловушка фокуса.",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Что такое `focus-visible` и зачем он?",
+                        sampleAnswer: "CSS-псевдокласс, который показывает outline только при клавиатурной навигации.",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Как отключить анимацию для пользователей с motion sensitivity?",
+                        sampleAnswer: "@media (prefers-reduced-motion: reduce) { animation: none; }",
+                        level: 'senior'
+                    },
+                    {
+                        text: "Как протестировать a11y вручную?",
+                        sampleAnswer: "Tab-навигация, скринридер (NVDA, VoiceOver), Lighthouse, axe."
                     }
                 ]
             }
         ]
     },
     {
-        category: "HTTP & HTTPS",
+        category: Categories.HTTP,
         weight: 15,
         questions: [
             {
@@ -634,7 +1066,7 @@ export const questions: QuestionCategory[] = [
         ]
     },
     {
-        category: "Браузерные хранилища",
+        category: Categories.Storage,
         weight: 15,
         questions: [
             {
@@ -746,111 +1178,111 @@ export const questions: QuestionCategory[] = [
         ]
     },
     {
-        category: "Сборка, CI/CD",
+        category: Categories.Build,
         weight: 10,
         questions: [
             {
-                text: "Как уменьшить размер бандла на 30%, не удаляя функциональность?",
+                text: "Какие этапы включает современный процесс доставки фронтенд-приложения в production? Какие цели у каждого этапа?",
                 maxScore: 5,
                 level: 'middle',
-                sampleAnswer: "Code splitting, `React.lazy`, tree-shaking, динамические импорты, удаление неиспользуемых полифиллов.",
+                sampleAnswer: "1. Линтинг — проверка стиля и ошибок. 2. Сборка — минификация, tree-shaking. 3. Тесты — юнит, интеграционные, e2e. 4. Деплой на staging. 5. Продакшн — с мониторингом. Цель — безопасность, стабильность, скорость.",
                 subQuestions: [
                     {
-                        text: "Что такое бандл?",
-                        sampleAnswer: "Объединённый файл JavaScript, созданный сборщиком.",
+                        text: "Зачем нужен линтинг перед коммитом?",
+                        sampleAnswer: "Чтобы выявить ошибки и стиль до ревью. Поддерживает единообразие кода.",
                         level: 'junior'
                     },
                     {
-                        text: "Что делает сборщик (bundler)?",
-                        sampleAnswer: "Объединяет модули, минифицирует, транспилирует, оптимизирует код.",
+                        text: "Что такое pre-commit хуки?",
+                        sampleAnswer: "Скрипты, запускаемые перед коммитом (через `husky`, `lint-staged`). Проверяют код.",
                         level: 'junior'
                     },
                     {
-                        text: "Что такое `import` в JavaScript?",
-                        sampleAnswer: "Синтаксис для подключения модулей.",
+                        text: "Что происходит при сборке (`build`) проекта?",
+                        sampleAnswer: "Код транспилируется, объединяется в бандлы, минифицируется, добавляются sourcemap'ы.",
                         level: 'junior'
                     },
                     {
-                        text: "Что такое tree-shaking и как он работает?",
-                        sampleAnswer: "Удаление неиспользуемого кода на этапе сборки. Работает с `ESM`.",
+                        text: "Какие типы тестов вы знаете?",
+                        sampleAnswer: "Unit — отдельные функции. Integration — взаимодействие компонентов. E2E — сценарии пользователя.",
                         level: 'middle'
                     },
                     {
-                        text: "Как проверить, что бандл не слишком большой?",
-                        sampleAnswer: "Webpack Bundle Analyzer, Lighthouse, `source-map-explorer`.",
+                        text: "Зачем нужен `staging`-сервер?",
+                        sampleAnswer: "Тестовая среда, максимально похожая на продакшен. Для финальной проверки.",
                         level: 'middle'
                     },
                     {
-                        text: "Что такое code splitting?",
-                        sampleAnswer: "Разделение бандла на чанки, загружаемые по требованию.",
+                        text: "Как проверить, что новая версия работает корректно после деплоя?",
+                        sampleAnswer: "Healthcheck, Sentry, e2e-тесты, мониторинг ошибок и метрик загрузки.",
                         level: 'middle'
                     },
                     {
-                        text: "Как реализовать prefetching чанков?",
-                        sampleAnswer: "Используйте `import()` с `webpackPrefetch: true` или `<link rel='prefetch'>`.",
+                        text: "Как реализовать безопасный деплой без простоев (zero-downtime)?",
+                        sampleAnswer: "Blue-green deployment: два окружения, переключение трафика после проверки.",
                         level: 'senior'
                     },
                     {
-                        text: "Как минимизировать влияние полифиллов на размер бандла?",
-                        sampleAnswer: "Используйте `browserslist`, `core-js` с tree-shaking.",
+                        text: "Что такое canary release и зачем он нужен?",
+                        sampleAnswer: "Постепенный выпуск новой версии для части пользователей. Минимизирует риски.",
                         level: 'senior'
                     },
                     {
-                        text: "Как настроить differential bundling?",
-                        sampleAnswer: "Соберите отдельные бандлы для современных и старых браузеров.",
+                        text: "Как автоматически откатить деплой при обнаружении критических ошибок?",
+                        sampleAnswer: "По триггеру из Sentry или healthcheck. Автоматический rollback через CI/CD.",
                         level: 'senior'
                     }
                 ]
             },
             {
-                text: "Что происходит при `git push`? Какие шаги выполняются в CI/CD?",
+                text: "Какие принципы используются для оптимизации времени загрузки приложения? Как влияет архитектура сборки?",
                 maxScore: 5,
                 level: 'middle',
-                sampleAnswer: "Запускается pipeline: линтинг, сборка, тесты, деплой на staging. Production — после ревью или автоматически.",
+                sampleAnswer: "Code splitting, tree-shaking, lazy loading, кэширование статики. Архитектура сборки позволяет разделять код и загружать только нужное.",
                 subQuestions: [
                     {
-                        text: "Что такое `git push`?",
-                        sampleAnswer: "Команда для отправки коммитов в удалённый репозиторий.",
+                        text: "Что такое бандл и почему большой бандл — плохо?",
+                        sampleAnswer: "Объединённый JS-файл. Большой бандл медленно загружается и парсится.",
                         level: 'junior'
                     },
                     {
-                        text: "Что такое CI/CD?",
-                        sampleAnswer: "Непрерывная интеграция и доставка — автоматизация тестирования и деплоя.",
+                        text: "Что делает сборщик (bundler) вроде Webpack или Vite?",
+                        sampleAnswer: "Разрешает модули, применяет loaders, создаёт чанки, минифицирует код.",
                         level: 'junior'
                     },
                     {
-                        text: "Зачем нужен `lint`?",
-                        sampleAnswer: "Проверка кода на стиль и ошибки до коммита.",
-                        level: 'junior'
-                    },
-                    {
-                        text: "Как проверить, что деплой прошёл успешно?",
-                        sampleAnswer: "Healthcheck, e2e-тесты, мониторинг ошибок (Sentry).",
+                        text: "Что такое tree-shaking и как он работает?",
+                        sampleAnswer: "Удаление неиспользуемого кода. Работает с ESM и при условии, что код чистый.",
                         level: 'middle'
                     },
                     {
-                        text: "Как откатить деплой?",
-                        sampleAnswer: "Rollback через тег или переключение на предыдущий образ.",
+                        text: "Что такое code splitting и как его реализовать в React?",
+                        sampleAnswer: "Разделение кода на чанки. Через `React.lazy` и `import()`.",
                         level: 'middle'
                     },
                     {
-                        text: "Что такое `staging` окружение?",
-                        sampleAnswer: "Тестовая среда, максимально приближённая к production.",
+                        text: "Как проверить размер бандла и найти «тяжёлые» зависимости?",
+                        sampleAnswer: "Webpack Bundle Analyzer, `source-map-explorer`, Lighthouse.",
                         level: 'middle'
                     },
                     {
-                        text: "Как реализовать canary-деплой?",
-                        sampleAnswer: "Запустите новую версию для 1% пользователей, затем расширьте.",
+                        text: "Как уменьшить влияние полифиллов на размер бандла?",
+                        sampleAnswer: "Использовать `browserslist`, динамические полифиллы (например, `polyfill.io`).",
+                        level: 'middle'
+                    },
+                    {
+                        text: "Что такое differential bundling и зачем он нужен?",
+                        sampleAnswer: "Отдельные бандлы для старых и новых браузеров. Современные получают легкий код.",
                         level: 'senior'
                     },
                     {
-                        text: "Как безопасно деплоить с нулевым простоем?",
-                        sampleAnswer: "Blue-green деплой: два окружения, переключение трафика после проверки.",
+                        text: "Как реализовать prefetching или preload чанков?",
+                        sampleAnswer: "Через `webpackPreload`, `webpackPrefetch` или `<link rel='prefetch'>`.",
                         level: 'senior'
                     },
                     {
-                        text: "Как настроить автоматический деплой только при изменениях в определённой папке?",
-                        sampleAnswer: "В CI используйте фильтр `paths`.",
+                        text: "Как оптимизировать загрузку шрифтов и изображений?",
+                        sampleAnswer: "Font-display: swap, lazy loading, современные форматы (WebP), CDN.",
                         level: 'senior'
                     }
                 ]
@@ -858,7 +1290,7 @@ export const questions: QuestionCategory[] = [
         ]
     },
     {
-        category: "Тестирование",
+        category: Categories.Tests,
         weight: 10,
         questions: [
             {
@@ -1023,7 +1455,7 @@ export const questions: QuestionCategory[] = [
         ]
     },
     {
-        category: "Работа с API",
+        category: Categories.Api,
         weight: 10,
         questions: [
             {
