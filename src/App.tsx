@@ -8,6 +8,7 @@ import {useInterviewStore} from './store/useInterviewStore';
 import {RatingScale} from "./components/RatingScale.tsx";
 import {InterviewActions} from "./components/InterviewActions.tsx";
 import {InterviewCheatSheet} from "./components/InterviewCheatSheet.tsx";
+import {CodingTaskPanel} from "./components/CodingTaskPanel.tsx";
 
 const {Title} = Typography;
 
@@ -60,6 +61,7 @@ export const App = () => {
             {questions.map((group) => (
                 <QuestionGroup key={group.category} group={group}/>
             ))}
+            <CodingTaskPanel />
 
             <InterviewActions
                 totalScore={totalScore}
