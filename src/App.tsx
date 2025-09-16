@@ -61,7 +61,7 @@ export const App = () => {
             {questions.map((group) => (
                 <QuestionGroup key={group.category} group={group}/>
             ))}
-            <CodingTaskPanel />
+            <CodingTaskPanel/>
 
             <InterviewActions
                 totalScore={totalScore}

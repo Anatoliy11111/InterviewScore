@@ -2,6 +2,7 @@
 import {Button, Modal, Typography, Alert, Space, message} from 'antd';
 import {CopyOutlined} from '@ant-design/icons';
 import {Categories, MINI_TASKS} from "../data/questions.ts";
+import type {NoticeType} from "antd/es/message/interface";
 
 const {Title} = Typography;
 
@@ -13,11 +14,19 @@ interface Props {
 
 export const MiniTaskModal = ({categoryId, open, onClose}: Props) => {
     const tasks = MINI_TASKS[categoryId];
+    const [messageApi, contextHolder] = message.useMessage();
+    const success = (content: string, type: NoticeType) => {
+        messageApi.open({
+            type,
+            content,
+            duration: 2.5,
+        })
+    };
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text).then(
-            () => message.success('Скопировано!'),
-            () => message.error('Не удалось скопировать')
+            () => success('Скопировано!', 'success'),
+            () => success('Не удалось скопировать', 'error')
         );
     };
 
@@ -29,6 +38,7 @@ export const MiniTaskModal = ({categoryId, open, onClose}: Props) => {
             onCancel={onClose}
             width={700}
         >
+            {contextHolder}
             {tasks.length === 0 ? (
                 <Alert type="info" message="Нет задач для этой категории"/>
             ) : (

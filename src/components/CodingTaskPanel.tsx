@@ -3,22 +3,32 @@ import {Button, Collapse, Typography, Alert, Space, message} from 'antd';
 import {CopyOutlined, EyeOutlined} from '@ant-design/icons';
 import {useState} from 'react';
 import {CODING_TASKS} from '../data/codingTasks';
+import type {NoticeType} from "antd/es/message/interface";
 
 const {Title, Paragraph, Text} = Typography;
 const {Panel} = Collapse;
 
 export const CodingTaskPanel = () => {
     const [visibleSolution, setVisibleSolution] = useState<string | null>(null);
+    const [messageApi, contextHolder] = message.useMessage();
+    const success = (content: string, type: NoticeType) => {
+        messageApi.open({
+                type,
+                content,
+                duration: 2.5,
+            })
+    };
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text).then(
-            () => message.success('Скопировано!'),
-            () => message.error('Ошибка копирования')
+            () => success('Скопировано!', 'success'),
+            () => success('Ошибка копирования', 'error')
         );
     };
 
     return (
         <div style={{maxWidth: '100%'}}>
+            {contextHolder}
             <Title level={3} style={{textAlign: 'center', color: '#1890ff'}}>
                 💻 Задачи для собеседования
             </Title>

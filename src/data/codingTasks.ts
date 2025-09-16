@@ -49,7 +49,9 @@ expect(findVowelsLength('AeIoUy')).toBe(6);`,
         id: '3',
         title: 'Группировка анаграмм',
         description: 'Напишите функцию, которая группирует слова по анаграммам. Верните только группы, где более одного элемента.',
-        codeTemplate: `/**
+        codeTemplate: `Вход: ['xyz','abc', 'bca', 'zyx', 'klm', 'cab', 'zxy', 'xzy']
+Выход: [['xyz', 'zyx', 'zxy', 'xzy'], ['abc', 'bca', 'cab']]\`,
+ /**
  * Анаграмма — слово, образованное перестановкой букв.
  * @param {string[]} words - массив строк
  * @returns {string[][]} - массив групп анаграмм (длина > 1)
@@ -159,5 +161,74 @@ export default Component;`,
                 'Во время разработки можно использовать прокси в Vite/Webpack'
             ]
         }
+    },
+    {
+        id: '4',
+        title: 'jQuery-подобный чейнинг',
+        description: 'Реализуйте мини-библиотеку, которая позволяет выбирать элемент и цеплять методы: добавление класса, установка HTML, обработка кликов.',
+        codeTemplate: `/**
+ * Мини-библиотека для DOM-манипуляций с поддержкой чейнинга
+ * Пример:
+ * $('.block')
+ *   .appendClass('active')
+ *   .setHTML('<span>Hi</span>')
+ *   .onClick(() => console.log('clicked'));
+ */
+
+function $(selector) {
+  // ваш код
+}`,
+        solution: `function $(selector) {
+  const element = document.querySelector(selector);
+  
+  if (!element) {
+    console.warn(\`Элемент с селектором "\${selector}" не найден\`);
+    return {
+      // Возвращаем пустой объект с теми же методами для поддержки чейнинга
+      appendClass: () => $(),
+      setHTML: () => $(),
+      onClick: () => $()
+    };
+  }
+
+  function addMethod(name, fn) {
+    instance[name] = fn;
+    return instance;
+  }
+
+  const instance = {
+    element,
+    appendClass(className) {
+      element.classList.add(className.replace(/^\\./, '')); // убираем точку, если есть
+      return this;
+    },
+    setHTML(html) {
+      element.innerHTML = html;
+      return this;
+    },
+    onClick(handler) {
+      element.addEventListener('click', handler);
+      return this;
     }
+  };
+
+  return instance;
+}
+
+// Использование:
+// const node = $('.some-block');
+// node
+//   .appendClass('additional-class')
+//   .setHTML('<h1>Hello, World!</h1>')
+//   .onClick(() => console.log('click'));`,
+        question: {
+            text: 'Как сделать библиотеку расширяемой, чтобы можно было легко добавлять новые методы?',
+            hints: [
+                'Используйте шаблон "Builder" или реестр методов',
+                'Можно хранить методы в объекте и динамически их добавлять',
+                'Подумайте о плагинах: $.fn.extend = function(...) { ... }'
+            ]
+        }
+    }
+
 ];
