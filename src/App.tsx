@@ -1,5 +1,5 @@
 import {useState, useMemo} from 'react';
-import { Typography, Input } from 'antd';
+import {Typography, Input, Button, Modal} from 'antd';
 import {QuestionGroup} from './components/QuestionGroup';
 import {AIReport} from './components/AIReport';
 import {PDFExport} from './components/PDFExport';
@@ -7,14 +7,14 @@ import {questions} from './data/questions';
 import {useInterviewStore} from './store/useInterviewStore';
 import {RatingScale} from "./components/RatingScale.tsx";
 import {InterviewActions} from "./components/InterviewActions.tsx";
-import {generateReportWithYandex} from "./utils/generateAIReport.ts";
+import {InterviewCheatSheet} from "./components/InterviewCheatSheet.tsx";
 
-const { Title } = Typography;
+const {Title} = Typography;
 
-export const App = ()=> {
-    const [loading, setLoading] = useState(false);
+export const App = () => {
+    const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
     // ✅ Обязательно деструктурируем `ratings`
-    const { candidateName, setCandidateName, aiReport, setAIReport, ratings } = useInterviewStore();
+    const {candidateName, setCandidateName, aiReport, ratings} = useInterviewStore();
     // ✅ Рассчитываем общий балл, зависит ТОЛЬКО от `ratings`
 
     const totalScore = useMemo(() => {
@@ -29,49 +29,46 @@ export const App = ()=> {
         });
         return Math.round(score * 100) / 100;
     }, [JSON.stringify(ratings)]); // ✅ Зависимость — только от ratings
-    // ✅ Генерация мок-заключения
-
-
-    const generateAIReport = () => {
-        const API_KEY = '';
-
-        generateReportWithYandex({
-            totalScore,
-            folderId: '',
-            apiKey: API_KEY,
-            onSuccess: (report) => setAIReport(report),
-            onError: (error) => setAIReport(`❌ ${error}`),
-            onLoading: setLoading,
-        });
-    };
-
-
 
     return (
-        <div style={{ padding: 24 }}>
+        <div style={{padding: 24}}>
             <Title>Оценка кандидата на должность frontend разработчика</Title>
             <Input
                 placeholder="Имя кандидата"
                 value={candidateName}
                 onChange={(e) => setCandidateName(e.target.value)}
-                style={{ width: 300 }}
+                style={{width: 300}}
             />
-            <RatingScale />
+
+            <Modal
+                open={cheatsheetOpen}
+                footer={null}
+                onCancel={() => setCheatsheetOpen(false)}
+                width="90%"
+                style={{top: 20}}
+            >
+                <InterviewCheatSheet/>
+            </Modal>
+            <div>
+                <Button style={{padding: '8px', fontSize: 13, fontWeight: 500, color: '#1890ff'}} type="link"
+                        onClick={() => setCheatsheetOpen(true)}>
+                    📘 Открыть теорию
+                </Button>
+                <RatingScale/>
+            </div>
 
             {questions.map((group) => (
-                <QuestionGroup key={group.category} group={group} />
+                <QuestionGroup key={group.category} group={group}/>
             ))}
 
             <InterviewActions
                 totalScore={totalScore}
-                onGenerateReport={generateAIReport}
-                loading={loading}
             />
 
-            {aiReport && <AIReport report={aiReport} />}
+            {aiReport && <AIReport report={aiReport}/>}
 
-            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <PDFExport id="pdf-export" />
+            <div style={{position: 'absolute', left: '-9999px', top: '-9999px'}}>
+                <PDFExport id="pdf-export"/>
             </div>
         </div>
     );

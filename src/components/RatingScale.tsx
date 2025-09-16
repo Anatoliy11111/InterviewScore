@@ -69,7 +69,6 @@ export const RatingScale = () => (
         size="small"
         ghost
         bordered={false}
-        style={{marginTop: 8}}
         expandIconPosition="end"
     >
         <Panel

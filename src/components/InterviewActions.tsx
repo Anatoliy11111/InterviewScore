@@ -5,8 +5,6 @@ import {exportToPDF} from "../utils/exportToPDF.ts";
 
 interface Props {
     totalScore: number;
-    onGenerateReport: () => void;
-    loading: boolean;
 }
 
 export const InterviewActions = ({
